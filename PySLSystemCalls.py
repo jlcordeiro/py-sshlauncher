@@ -15,6 +15,7 @@ def ssh( user, ip, port ):
    command = "ssh -p %d %s@%s" % ( int(port), user, ip )
    os.system( command )
 
+# TODO: dependency sshfs
 def sshfs( user, ip, port, path, mountpoint ):
    if os.path.isdir(mountpoint) == False:
 	   raise PySLDirNotFoundError
@@ -46,31 +47,40 @@ def umount( mountpoint ):
       if notFoundString in str(e.output):
          raise PySLDirNotFoundError
 
-      raise PySLError(0,str(e.output))
+      raise PySLError( ERROR_GENERALERROR,str(e.output))
 
-def serverIsMounted( user, ip, remotepath, localpath):
+def isServerMounted( user, ip, remotepath, localpath):
+   """ Checks if a machine is mounted on the system already.
+       Returns True if it is. False otherwise. """
 
-   searchString = "%s@%s:%s %s " % ( user, ip, remotepath, os.path.abspath(localpath) )
+   try:
+      cmdOutput = check_output( "mount ", stderr=subprocess.STDOUT, shell=True )
+   except CalledProcessError as e:
+      raise PySLError( ERROR_GENERALERROR, "Could not get list of mounted devices." )
 
-   mtab = open( "/etc/mtab", "r" )
-   exists = mtab.read().find( searchString ) is not -1
-   mtab.close()
+   mountList = cmdOutput.decode("utf-8").split('\n')
 
-   return exists
+   searchString = "%s@%s:%s on %s " % ( user, ip, remotepath, os.path.abspath(localpath) )
+
+   for m in mountList:
+      if m.find( searchString ) is not -1:
+         return True
+
+   return False
 
 
 #### unit testing
 
 if __name__ == "__main__":
+
    
-   ## local machine details
+## local machine details
  
    ip = "10.1.10.150"
    port = 22
    user = "joao"
    remotepath = "."
    localpath = "./mnt"
-
 
    ## prepare system
 
@@ -80,7 +90,7 @@ if __name__ == "__main__":
    except PySLNoPermissionsError as e:
       print("You don't have permissions to run these tests.")
       sys.exit(1)
-   except PySLError as e:
+   except PySLError:
       pass
 
    #delete mount points
@@ -93,7 +103,7 @@ if __name__ == "__main__":
    ## test
 
    # check server is not mounted
-   assert serverIsMounted( user, ip, remotepath, localpath ) == False
+   assert isServerMounted( user, ip, remotepath, localpath ) == False
 
    # mount server. should fail because folder has not been mounted
    try:
@@ -103,7 +113,7 @@ if __name__ == "__main__":
       pass
 
    # check server is still not mounted
-   assert serverIsMounted( user, ip, remotepath, localpath ) == False
+   assert isServerMounted( user, ip, remotepath, localpath ) == False
 
    # create folder
    createMountPoint( localpath )
@@ -113,7 +123,7 @@ if __name__ == "__main__":
    sshfs( user, ip, port, remotepath, localpath )
 
    # server should now be mounted
-   assert serverIsMounted( user, ip, remotepath, localpath ) == True
+   assert isServerMounted( user, ip, remotepath, localpath ) == True
    
    # unmount server
    try:
@@ -123,7 +133,7 @@ if __name__ == "__main__":
       sys.exit(1)
 
    # check server is still not mounted
-   assert serverIsMounted( user, ip, remotepath, localpath ) == False
+   assert isServerMounted( user, ip, remotepath, localpath ) == False
 
    # unmount server -- error casess
    # already unmounted
