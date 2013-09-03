@@ -42,7 +42,12 @@ class SServer():
       if self.mounted is True:
          return 0
 
-      result = sshfs( self.username, self.ip, self.port, self.remotepath, self.mountpoint )
+      mdir = os.path.expanduser(self.mountpoint)
+
+      if os.path.isdir(mdir) is False:
+         os.mkdir(mdir)
+
+      result = sshfs( self.username, self.ip, self.port, self.remotepath, mdir )
       if result == True:
          self.mounted = True
          return 1
@@ -53,9 +58,17 @@ class SServer():
       if self.mounted is False:
          return 0
 
-      result = umount( self.mountpoint )
+      mdir = os.path.expanduser(self.mountpoint)
+
+      result = umount( mdir )
       if result == True:
          self.mounted = False
+
+         try:
+             os.rmdir(mdir)
+         except OSError as ex:
+            pass
+
          return 1
 
       return 0
