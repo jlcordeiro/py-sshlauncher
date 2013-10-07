@@ -94,6 +94,7 @@ class SServerList():
          s.mounted = mtabText.find( s.username + "@" + s.ip + ":" + s.remotepath) is not -1
 
    def add_from_config( self, filename ):
+      """ Append all servers found on the configuration file to the local list of servers. """
          
       final_path = os.path.expanduser(filename)
       config = ConfigObj( final_path )

@@ -4,8 +4,6 @@ import sys
 import argparse
 from sserver import SServerList
 
-EXIT_FAILURE = 1
-
 parser = argparse.ArgumentParser(description='Control ssh endpoints.')
 parser.add_argument('-a', '--all', dest='mount_all', action='store', nargs='?', const='', metavar='FILTER',
                    help='Mount all endpoints matching the (optional) filter.')
@@ -27,9 +25,6 @@ parser.add_argument('-u', '--unmount', dest='unmount', action='store', nargs=1, 
                    help='Unmount endpoints.')
 parser.add_argument('--config-file', dest='config_file', action='store', nargs=1, metavar='CONFIG_FILE', default='~/.remotes_config',
                    help='Configuration file to be user.')
-
-args = parser.parse_args()
-print args
 
 servers = SServerList()
 servers.add_from_config( args.config_file )
@@ -57,6 +52,6 @@ elif args.unmount:
    if server is not None:
       server.unmount()
 else:
-   sys.exit(EXIT_FAILURE)
+   sys.exit(1)
 
 sys.exit(0)
