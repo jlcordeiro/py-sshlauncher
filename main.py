@@ -26,6 +26,8 @@ parser.add_argument('-u', '--unmount', dest='unmount', action='store', nargs=1, 
 parser.add_argument('--config-file', dest='config_file', action='store', nargs=1, metavar='CONFIG_FILE', default='~/.remotes_config',
                    help='Configuration file to be user.')
 
+args = parser.parse_args()
+
 servers = SServerList()
 servers.add_from_config( args.config_file )
 
