@@ -1,9 +1,3 @@
-HIGH
-Remove config code. use library
-
-LOW
 python2 compatibility
-- (remotes) Ask to create folder if it does not exist
-- (remotes) Add option to list all data on the file (including fields not expected)
 - (remotes) Option to add database to the list (with other options)
 
