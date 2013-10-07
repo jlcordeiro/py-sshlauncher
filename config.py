@@ -1,8 +1,11 @@
+import os
 import sserver
 from configobj import ConfigObj
 
 def ReadConfigIntoList( filename ):
-   config = ConfigObj( filename )
+      
+   final_path = os.path.expanduser(filename)
+   config = ConfigObj( final_path )
 
    serverList = []
 

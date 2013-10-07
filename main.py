@@ -5,7 +5,7 @@ from sys import argv
 
 import config
 
-configfile = "/home/joao/.remotes_config"
+configfile = "~/.remotes_config"
 
 EXIT_SUCCESS = 0
 EXIT_FAILURE = 1
