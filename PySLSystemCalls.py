@@ -21,7 +21,12 @@ def sshfs( user, ip, port, path, mountpoint ):
 	   raise PySLDirNotFoundError
 
    command = "sshfs -C -p %d %s@%s:%s %s" % ( int(port), user, ip, path, mountpoint )
-   os.system( command )
+   res = os.system( command )
+
+   if res == 0:
+      return True
+
+   return False
 
 def umount( mountpoint ):
    """ Unmounts a directory. If the operation is not successfull it will raise an exception.
@@ -31,7 +36,7 @@ def umount( mountpoint ):
          or a general PySLError for any other issue."""
    fullpath = os.path.abspath(mountpoint)
    try:
-      res = check_output( "umount " + fullpath, stderr=subprocess.STDOUT, shell=True )
+      check_output( "umount " + fullpath, stderr=subprocess.STDOUT, shell=True )
    except CalledProcessError as e:
       notMountedString1    = "umount: %s is not mounted (according to mtab)" % fullpath
       notMountedString2    = "umount: %s: not mounted" % fullpath
@@ -48,6 +53,9 @@ def umount( mountpoint ):
          raise PySLDirNotFoundError
 
       raise PySLError( ERROR_GENERALERROR,str(e.output))
+
+def ssh( user, ip, port ):
+   os.system( "ssh -p " + port + " " + user + "@" + ip )
 
 def isMachineMounted( user, ip, remotepath, localpath):
    """ Checks if a machine is mounted on the system already.

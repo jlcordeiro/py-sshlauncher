@@ -2,25 +2,6 @@ import os
 from configobj import ConfigObj
 from PySLSystemCalls import *
 
-def ssh( user, ip, port ):
-   os.system( "ssh -p " + port + " " + user + "@" + ip )
-
-def sshfs( user, ip, port, path, mountpoint ):
-   res = os.system( "sshfs -C -p " + port + " " + user + "@" + ip + ":" + path + " " + mountpoint )
-
-   if res == 0:
-      return True
-
-   return False
-
-def umount( mountpoint ):
-   res = os.system( "umount " + mountpoint )
-
-   if res == 0:
-      return True
-   
-   return False
-
 class SServer():
    def __init__(self, name, mountpoint, username, ip, remotepath, port):
         self.name = name
@@ -62,16 +43,19 @@ class SServer():
 
       mdir = os.path.expanduser(self.mountpoint)
 
-      result = umount( mdir )
-      if result == True:
+      try:
+         umount( mdir )
+
          self.mounted = False
 
          try:
              os.rmdir(mdir)
-         except OSError as ex:
+         except OSError as rex:
             pass
 
          return 1
+      except PySLError as uex:
+         print uex
 
       return 0
 
