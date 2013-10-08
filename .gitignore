@@ -1,5 +1,11 @@
-# python
+# Python
 *.pyc
 
 #vim
 *.swp
+
+# Packages
+*.egg
+*.egg-info
+dist
+build
