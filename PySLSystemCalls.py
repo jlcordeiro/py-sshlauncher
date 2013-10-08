@@ -49,7 +49,7 @@ def umount( mountpoint ):
 
       raise PySLError( ERROR_GENERALERROR,str(e.output))
 
-def isServerMounted( user, ip, remotepath, localpath):
+def isMachineMounted( user, ip, remotepath, localpath):
    """ Checks if a machine is mounted on the system already.
        Returns True if it is. False otherwise. """
 

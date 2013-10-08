@@ -1,5 +1,6 @@
 import os
 from configobj import ConfigObj
+from PySLSystemCalls import *
 
 def ssh( user, ip, port ):
    os.system( "ssh -p " + port + " " + user + "@" + ip )
@@ -78,20 +79,13 @@ class SServer():
       ssh( self.username, self.ip, self.port )
       return 1
 
+def isServerMounted( server ):
+   """ Checks if a server is mounted on the system. """
+   return isMachineMounted( server.username, server.ip, server.remotepath, server.mountpoint )
+
 class SServerList():
    def __init__( self ):
       self.servers = []
-
-   def mark_mounted( self ):
-      """ Run trought the servers and mark as mounted those that are found in /etc/mtab. """
-      # read mtab into memory
-      mtab = open( "/etc/mtab", "r" )
-      mtabText = mtab.read()
-      mtab.close()
-
-      # check which servers are in there
-      for s in self.servers:
-         s.mounted = mtabText.find( s.username + "@" + s.ip + ":" + s.remotepath) is not -1
 
    def add_from_config( self, filename ):
       """ Append all servers found on the configuration file to the local list of servers. """
@@ -106,9 +100,11 @@ class SServerList():
          remotepath = config[c]["remotepath"]
          mountpoint = config[c]["mountpoint"]
 
-         self.servers.append( SServer( c, mountpoint, user, ip, remotepath, port ) )
+         new_server = SServer( c, mountpoint, user, ip, remotepath, port )
+         new_server.mounted = isServerMounted( new_server )
 
-      self.mark_mounted()
+         self.servers.append( new_server )
+
 
    def print_list( self, namefilter='', state='any', printmode='' ):
       """ prints the list of servers.
