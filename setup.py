@@ -13,5 +13,5 @@ setup(name='sshlauncher',
           'License :: OSI Approved :: MIT License',
           'Programming Language :: Python :: 2.7'
       ],
-      py_modules=['sshlauncher'],
+      py_modules=['sshlauncher','sserver','PySLSystemCalls','PySLErrors'],
       )
