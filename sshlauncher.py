@@ -42,17 +42,23 @@ elif args.unmount_all is not None:
       server.unmount()
       server.Print()
 elif args.ssh:
-   server = servers.find_all(exact_match=args.ssh[0])[0]
+   server = servers.find_one(exact_match=args.ssh[0])
    if server is not None:
       server.ssh()
+   else:
+      print "Server not found."
 elif args.mount:
-   server = servers.find_all(exact_match=args.mount[0])[0]
+   server = servers.find_one(exact_match=args.mount[0])
    if server is not None:
       server.mount()
+   else:
+      print "Server not found."
 elif args.unmount:
-   server = servers.find_all(exact_match=args.unmount[0])[0]
+   server = servers.find_one(exact_match=args.unmount[0])
    if server is not None:
       server.unmount()
+   else:
+      print "Server not found."
 else:
    sys.exit(1)
 

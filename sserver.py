@@ -125,3 +125,15 @@ class SServerList():
          return [ s for s in self.servers if partial_match in s.name ]
 
       return []
+
+   def find_one( self, exact_match=None, partial_match=None ):
+      """ Get the first server that has a name matching the parameters.
+         If exact_match is provided, returns one that match that exact string.
+         Otherwise, returns one that has a name including that string. """
+
+      matches = self.find_all(exact_match,partial_match)
+
+      if len(matches) < 1:
+         return None
+
+      return matches[0]
