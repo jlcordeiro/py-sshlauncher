@@ -2,6 +2,7 @@
 
 import sys
 import argparse
+from sserver import valid_server
 from sserver import SServerList
 
 parser = argparse.ArgumentParser(description='Control ssh endpoints.')
@@ -37,24 +38,33 @@ class Action:
         self.name_filter = name_filter
         self.endpoints = []
 
-
     def __mount_servers(self):
-        """ Mount all servers in a list. """
+        """ Mount all endpoints. """
         for server in self.endpoints:
             server.mount()
             server.Print()
 
     def __unmount_servers(self):
-        """ Unmount all servers in a list. """
+        """ Unmount all endpoints. """
         for server in self.endpoints:
             server.unmount()
             server.Print()
 
     def __ssh(self):
+        """ Connect into the first endpoint. """
         self.endpoints[0].ssh()
 
     def __list_servers(self):
-        SERVERS.print_list(self.name_filter, ARGS.filter_state, ARGS.list_format)
+        """ Prints all the endpoints.
+            print mode - prints details if 'verbose',
+            otherwise it just prints the server name """
+
+        for server in self.endpoints:
+            if ARGS.list_format == "verbose":
+                server.PrintDetails()
+            else:
+                server.Print()
+
 
     def run(self):
         if self.endpoints is None:
@@ -94,10 +104,15 @@ def action_factory(args):
         action.endpoints = SERVERS.find_all(partial_match=action.name_filter)
     elif action.name in ("ssh", "mount", "unmount"):
         action.endpoints = [SERVERS.find_one(exact_match=action.name_filter)]
+    elif action.name == "list":
+        endpoints_with_name = SERVERS.find_all(partial_match=action.name_filter)
+
+        action.endpoints = [e for e in endpoints_with_name
+                            if valid_server(e, ARGS.filter_state)]
 
     return action
 
-
+print ARGS
 if action_factory(ARGS).run() < 0:
     print "Server not found."
     sys.exit(1)

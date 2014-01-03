@@ -89,31 +89,6 @@ class SServerList():
 
          self.servers.append( new_server )
 
-
-   def print_list( self, namefilter='', state='any', printmode='' ):
-      """ prints the list of servers.
-         namefilter - used to filter the servers by name. Only those that have the filter string on
-         on their name are printed
-         state- used to filter the servers by their state.
-            * any - all servers are printed
-            * mounted - only mounted servers are printed
-            * unmounted - only unmounted servers are printed
-         print mode - prints details if 'verbose', otherwise it just prints the server name """
-
-      for s in self.servers:
-         if namefilter in s.name:
-
-            if state=='mounted' and s.mounted is False:
-               continue
-
-            if state=='unmounted' and s.mounted is True:
-               continue
-
-            if printmode == "verbose":
-               s.PrintDetails()
-            else:
-               s.Print()
-
    def find_all( self, exact_match=None, partial_match=None ):
       """ Get the servers that have a name matching the parameters.
          If exact_match is provided, returns the ones that match that exact string.
@@ -137,3 +112,20 @@ class SServerList():
          return None
 
       return matches[0]
+
+def valid_server(server, wanted_state):
+    """ Tells whether or not a server is in the wanted state.
+        The possible values for wanted_state are
+        ('any', 'mounted', 'unmounted') """
+
+    if wanted_state == 'any':
+        return True
+
+    if wanted_state == 'mounted' and server.mounted is True:
+        return True
+
+    if wanted_state == 'unmounted' and server.mounted is False:
+        return True
+
+    return False
+
