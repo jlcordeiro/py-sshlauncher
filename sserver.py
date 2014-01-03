@@ -2,8 +2,9 @@ import os
 from configobj import ConfigObj
 from PySLSystemCalls import *
 
-class SServer():
-   def __init__(self, name, mountpoint, username, ip, remotepath, port):
+class SServer(object):
+    """ Class that represents a server. """
+    def __init__(self, name, mountpoint, username, ip, remotepath, port):
         self.name = name
         self.mountpoint = mountpoint
         self.username = username
@@ -11,107 +12,120 @@ class SServer():
         self.remotepath = remotepath
         self.port = port
         self.mounted = False
-  
-   def mountString( self ):
-      return " [*] " if self.mounted is True else " [ ] "
 
-   def Print( self ):
-      print self.mountString() + self.name
+    def __mount_string( self ):
+        """ Get the string that represents if the server is mounted or not. """
+        return " [*] " if self.mounted is True else " [ ] "
 
-   def PrintDetails( self ):
-      print self.mountString() + self.name + " --- " + self.username + "@" + self.ip + ":" + self.port + " on " + self.mountpoint
+    def print_short( self ):
+        """ Print server info. Summary. """
+        print self.__mount_string() + self.name
 
-   def mount( self ):
-      if self.mounted is True:
-         return 0
+    def print_details( self ):
+        """ Print server info. Verbose. """
+        print self.__mount_string() + self.name + " --- " + self.username + "@" + self.ip + ":" + self.port + " on " + self.mountpoint
 
-      mdir = os.path.expanduser(self.mountpoint)
+    def mount( self ):
+        """ Mount the server. """
+        if self.mounted is True:
+            return 0
 
-      if os.path.isdir(mdir) is False:
-         os.mkdir(mdir)
+        mdir = os.path.expanduser(self.mountpoint)
 
-      result = sshfs( self.username, self.ip, self.port, self.remotepath, mdir )
-      if result == True:
-         self.mounted = True
-         return 1
+        if os.path.isdir(mdir) is False:
+            os.mkdir(mdir)
 
-      return 0
+        result = sshfs(self.username, self.ip, self.port, self.remotepath, mdir)
+        if result == True:
+            self.mounted = True
+            return 1
 
-   def unmount( self ):
-      if self.mounted is False:
-         return 0
+        return 0
 
-      mdir = os.path.expanduser(self.mountpoint)
+    def unmount( self ):
+        """ Unmount the server. """
+        if self.mounted is False:
+            return 0
 
-      try:
-         umount( mdir )
+        mdir = os.path.expanduser(self.mountpoint)
 
-         self.mounted = False
+        try:
+            umount( mdir )
 
-         try:
-             os.rmdir(mdir)
-         except OSError as rex:
-            pass
+            self.mounted = False
 
-         return 1
-      except PySLError as uex:
-         print uex
+            try:
+                os.rmdir(mdir)
+            except OSError:
+                pass
 
-      return 0
+            return 1
+        except PySLError as uex:
+            print uex
 
-   def ssh( self ):
-      ssh( self.username, self.ip, self.port )
-      return 1
+        return 0
 
-def isServerMounted( server ):
-   """ Checks if a server is mounted on the system. """
-   return isMachineMounted( server.username, server.ip, server.remotepath, server.mountpoint )
+    def ssh( self ):
+        """ SSH into the server. """
+        ssh( self.username, self.ip, self.port )
+        return 1
 
-class SServerList():
-   def __init__( self ):
-      self.servers = []
+def is_server_mounted(server):
+    """ Checks if a server is mounted on the system. """
+    return isMachineMounted(server.username,
+                            server.ip,
+                            server.remotepath,
+                            server.mountpoint)
 
-   def add_from_config( self, filename ):
-      """ Append all servers found on the configuration file to the local list of servers. """
-         
-      final_path = os.path.expanduser(filename)
-      config = ConfigObj( final_path )
+class SServerList(object):
+    """ List of servers. """
 
-      for c in config:
-         ip = config[c]["ip"]
-         port = config[c]["port"]
-         user = config[c]["user"]
-         remotepath = config[c]["remotepath"]
-         mountpoint = config[c]["mountpoint"]
+    def __init__( self ):
+        self.servers = []
 
-         new_server = SServer( c, mountpoint, user, ip, remotepath, port )
-         new_server.mounted = isServerMounted( new_server )
+    def add_from_config( self, filename ):
+        """ Append all servers found on the configuration file
+            to the local list of servers. """
 
-         self.servers.append( new_server )
+        final_path = os.path.expanduser(filename)
+        config = ConfigObj( final_path )
 
-   def find_all( self, exact_match=None, partial_match=None ):
-      """ Get the servers that have a name matching the parameters.
-         If exact_match is provided, returns the ones that match that exact string.
-         Otherwise, returns the servers that have a name including that string. """
-      if exact_match is not None:
-         return [ s for s in self.servers if exact_match == s.name ]
+        for c in config:
+            ip = config[c]["ip"]
+            port = config[c]["port"]
+            user = config[c]["user"]
+            remotepath = config[c]["remotepath"]
+            mountpoint = config[c]["mountpoint"]
 
-      if partial_match is not None:
-         return [ s for s in self.servers if partial_match in s.name ]
+            new_server = SServer( c, mountpoint, user, ip, remotepath, port )
+            new_server.mounted = is_server_mounted( new_server )
 
-      return []
+            self.servers.append( new_server )
 
-   def find_one( self, exact_match=None, partial_match=None ):
-      """ Get the first server that has a name matching the parameters.
+    def find_all( self, exact_match=None, partial_match=None ):
+        """ Get the servers that have a name matching the parameters.
+            If exact_match is provided, returns the ones that match
+            that exact string. Otherwise, returns the servers that
+            have a name including that string. """
+        if exact_match is not None:
+            return [ s for s in self.servers if exact_match == s.name ]
+
+        if partial_match is not None:
+            return [ s for s in self.servers if partial_match in s.name ]
+
+        return []
+
+    def find_one(self, exact_match=None, partial_match=None):
+        """ Get the first server that has a name matching the parameters.
          If exact_match is provided, returns one that match that exact string.
          Otherwise, returns one that has a name including that string. """
 
-      matches = self.find_all(exact_match,partial_match)
+        matches = self.find_all(exact_match, partial_match)
 
-      if len(matches) < 1:
-         return None
+        if len(matches) < 1:
+            return None
 
-      return matches[0]
+        return matches[0]
 
 def valid_server(server, wanted_state):
     """ Tells whether or not a server is in the wanted state.
@@ -128,4 +142,3 @@ def valid_server(server, wanted_state):
         return True
 
     return False
-
