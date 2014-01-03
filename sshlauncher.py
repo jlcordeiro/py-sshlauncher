@@ -7,54 +7,63 @@ import argparse
 from sserver import valid_server
 from sserver import SServerList
 
+
 PARSER = argparse.ArgumentParser(description='Control ssh endpoints.')
-
-PARSER.add_argument('-a', '--all',
-                    dest='mount_all', action='store',
-                    nargs='?', const='', metavar='FILTER',
-                    help='Mount endpoints matching the (optional) filter.')
-
-PARSER.add_argument('-n', '--none',
-                    dest='unmount_all', action='store',
-                    nargs='?', const='', metavar='FILTER',
-                    help='Unmount endpoints matching the (optional) filter.')
-
-PARSER.add_argument('-l', '--list',
-                    dest='list', action='store',
-                    nargs='?', const='', metavar='FILTER',
-                    help='List endpoints.')
-
-PARSER.add_argument('-lv', '--listv',
-                    dest='listv', action='store',
-                    nargs='?', const='', metavar='FILTER',
-                    help='List endpoints.')
-
-PARSER.add_argument('--state',
-                    dest='filter_state', action='store',
-                    metavar='STATE', default='any',
-                    choices=['mounted','unmounted','any'],
-                    help='Filter printed endpoints by state.')
-
-PARSER.add_argument('-s', '--ssh',
-                    dest='ssh', action='store',
-                    nargs=1, metavar='ENDPOINT_NAME',
-                    help='SSH into endpoint.')
-
-PARSER.add_argument('-m', '--mount',
-                    dest='mount', action='store',
-                    nargs=1, metavar='ENDPOINT_NAME',
-                    help='Mount endpoints.')
-
-PARSER.add_argument('-u', '--unmount',
-                    dest='unmount', action='store',
-                    nargs=1, metavar='ENDPOINT_NAME',
-                    help='Unmount endpoints.')
 
 PARSER.add_argument('--config-file',
                     dest='config_file', action='store',
                     nargs=1, metavar='CONFIG_FILE',
                     default='~/.remotes_config',
                     help='Configuration file to be user.')
+
+# create the top-level parser
+SUBPARSERS = PARSER.add_subparsers(help='sub-command help')
+
+# list sub command
+
+PARSER_LST = SUBPARSERS.add_parser('list', help='List servers.')
+
+PARSER_LST.add_argument('list', nargs='?', metavar='FILTER',
+                        help='List endpoints.')
+
+PARSER_LST.add_argument('-v', '--verbose',
+                        dest='verbose', action='store_true', default='false',
+                        help='Verbose mode.')
+
+PARSER_LST.add_argument('--state',
+                        dest='filter_state', action='store',
+                        metavar='STATE', default='any',
+                        choices=['mounted','unmounted','any'],
+                        help='Filter by state.')
+
+# mount sub command
+
+PARSER_MNT = SUBPARSERS.add_parser('mount', help='Mount servers.')
+
+PARSER_MNT.add_argument('mount', nargs=1, metavar='ENDPOINT_NAME',
+                        help='Mount the endpoint with the specified name.')
+
+PARSER_MNT.add_argument('-a', '--all',
+                        dest='all', action='store_true', default='false',
+                        help='Mount endpoints matching the (optional) filter.')
+
+# unmount sub command
+
+PARSER_UMT = SUBPARSERS.add_parser('unmount', help='Unmount servers.')
+
+PARSER_UMT.add_argument('unmount', nargs=1, metavar='ENDPOINT_NAME',
+                        help='Unmount endpoints.')
+
+PARSER_UMT.add_argument('-a', '--all',
+                        dest='all', action='store_true', default='false',
+                       help='Unmount endpoints matching the (optional) filter.')
+
+# ssh sub command
+
+PARSER_SSH = SUBPARSERS.add_parser('ssh', help='SSH into server.')
+
+PARSER_SSH.add_argument('ssh', nargs=1, metavar='ENDPOINT_NAME',
+                        help='SSH into endpoint.')
 
 ARGS = PARSER.parse_args()
 
@@ -123,20 +132,18 @@ def action_factory(args):
 
     # Create the action
     action = None
-    if args.list is not None:
-        action = Action("list", args.list)
-    elif args.listv is not None:
-        action = Action("listv", args.listv)
-    elif args.mount_all is not None:
-        action = Action("mount_all", args.mount_all)
-    elif args.unmount_all is not None:
-        action = Action("unmount_all", args.unmount_all)
-    elif args.ssh:
+    if "list" in args:
+        a_filter = args.list if args.list else ""
+        a_name = "listv" if args.verbose is True else "list"
+        action = Action(a_name, a_filter)
+    elif "ssh" in args:
         action = Action("ssh", args.ssh[0])
-    elif args.mount:
-        action = Action("mount", args.mount[0])
-    elif args.unmount:
-        action = Action("unmount", args.unmount[0])
+    elif "mount" in args:
+        a_name = "mount_all" if args.all is True else "mount"
+        action = Action(a_name, args.mount[0])
+    elif "unmount" in args:
+        a_name = "unmount_all" if args.all is True else "unmount"
+        action = Action(a_name, args.unmount[0])
 
     # Set the endpoints
     if action.name in ("mount_all", "unmount_all"):
@@ -151,6 +158,7 @@ def action_factory(args):
 
     return action
 
+print ARGS
 if action_factory(ARGS).run() < 0:
     print "Server not found."
     sys.exit(1)
