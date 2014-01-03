@@ -26,40 +26,80 @@ parser.add_argument('-u', '--unmount', dest='unmount', action='store', nargs=1, 
 parser.add_argument('--config-file', dest='config_file', action='store', nargs=1, metavar='CONFIG_FILE', default='~/.remotes_config',
                    help='Configuration file to be user.')
 
-args = parser.parse_args()
+ARGS = parser.parse_args()
 
-servers = SServerList()
-servers.add_from_config( args.config_file )
+SERVERS = SServerList()
+SERVERS.add_from_config( ARGS.config_file )
 
-if args.list is not None:
-   servers.print_list( args.list, args.filter_state, args.list_format )
-elif args.mount_all is not None:
-   for server in servers.find_all(partial_match=args.mount_all):
-      server.mount()
-      server.Print()
-elif args.unmount_all is not None:
-   for server in servers.find_all(partial_match=args.unmount_all):
-      server.unmount()
-      server.Print()
-elif args.ssh:
-   server = servers.find_one(exact_match=args.ssh[0])
-   if server is not None:
-      server.ssh()
-   else:
-      print "Server not found."
-elif args.mount:
-   server = servers.find_one(exact_match=args.mount[0])
-   if server is not None:
-      server.mount()
-   else:
-      print "Server not found."
-elif args.unmount:
-   server = servers.find_one(exact_match=args.unmount[0])
-   if server is not None:
-      server.unmount()
-   else:
-      print "Server not found."
-else:
-   sys.exit(1)
+class Action:
+    def __init__(self, name, name_filter):
+        self.name = name
+        self.name_filter = name_filter
+        self.endpoints = []
+
+
+    def __mount_servers(self):
+        """ Mount all servers in a list. """
+        for server in self.endpoints:
+            server.mount()
+            server.Print()
+
+    def __unmount_servers(self):
+        """ Unmount all servers in a list. """
+        for server in self.endpoints:
+            server.unmount()
+            server.Print()
+
+    def __ssh(self):
+        self.endpoints[0].ssh()
+
+    def __list_servers(self):
+        SERVERS.print_list(self.name_filter, ARGS.filter_state, ARGS.list_format)
+
+    def run(self):
+        if self.endpoints is None:
+            return -1
+
+        {
+            "list":         self.__list_servers,
+            "mount_all":    self.__mount_servers,
+            "unmount_all":  self.__unmount_servers,
+            "ssh":          self.__ssh,
+            "mount":        self.__mount_servers,
+            "unmount":      self.__unmount_servers
+        }[self.name]()
+
+        return 0
+
+def action_factory(args):
+    """ Create an action based on the command arguments. """
+
+    # Create the action
+    action = None
+    if args.list is not None:
+        action = Action("list", args.list)
+    elif args.mount_all is not None:
+        action = Action("mount_all", args.mount_all)
+    elif args.unmount_all is not None:
+        action = Action("unmount_all", args.unmount_all)
+    elif args.ssh:
+        action = Action("ssh", args.ssh[0])
+    elif args.mount:
+        action = Action("mount", args.mount[0])
+    elif args.unmount:
+        action = Action("unmount", args.unmount[0])
+
+    # Set the endpoints
+    if action.name in ("mount_all", "unmount_all"):
+        action.endpoints = SERVERS.find_all(partial_match=action.name_filter)
+    elif action.name in ("ssh", "mount", "unmount"):
+        action.endpoints = [SERVERS.find_one(exact_match=action.name_filter)]
+
+    return action
+
+
+if action_factory(ARGS).run() < 0:
+    print "Server not found."
+    sys.exit(1)
 
 sys.exit(0)
