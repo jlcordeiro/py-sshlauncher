@@ -24,11 +24,10 @@ PARSER.add_argument('-l', '--list',
                     nargs='?', const='', metavar='FILTER',
                     help='List endpoints.')
 
-PARSER.add_argument('--format',
-                    dest='list_format', action='store',
-                    metavar='FORMAT', default='normal',
-                    choices=['normal','verbose'],
-                    help='Format used to print endpoints.')
+PARSER.add_argument('-lv', '--listv',
+                    dest='listv', action='store',
+                    nargs='?', const='', metavar='FILTER',
+                    help='List endpoints.')
 
 PARSER.add_argument('--state',
                     dest='filter_state', action='store',
@@ -92,7 +91,7 @@ class Action(object):
             otherwise it just prints the server name """
 
         for server in self.endpoints:
-            if ARGS.list_format == "verbose":
+            if self.name == "listv":
                 server.print_details()
             else:
                 server.print_short()
@@ -102,6 +101,7 @@ class Action(object):
 
         return  {
                 "list":         self.__list_servers,
+                "listv":        self.__list_servers,
                 "mount_all":    self.__mount_servers,
                 "unmount_all":  self.__unmount_servers,
                 "ssh":          self.__ssh,
@@ -125,6 +125,8 @@ def action_factory(args):
     action = None
     if args.list is not None:
         action = Action("list", args.list)
+    elif args.listv is not None:
+        action = Action("listv", args.listv)
     elif args.mount_all is not None:
         action = Action("mount_all", args.mount_all)
     elif args.unmount_all is not None:
@@ -141,7 +143,7 @@ def action_factory(args):
         action.endpoints = SERVERS.find_all(partial_match=action.name_filter)
     elif action.name in ("ssh", "mount", "unmount"):
         action.endpoints = [SERVERS.find_one(exact_match=action.name_filter)]
-    elif action.name == "list":
+    elif action.name in ("list", "listv"):
         endpoints_with_name = SERVERS.find_all(partial_match=action.name_filter)
 
         action.endpoints = [e for e in endpoints_with_name

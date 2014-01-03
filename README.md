@@ -15,7 +15,7 @@ sshlauncher.py -h
 
 ```
 usage: sshlauncher.py [-h] [-a [FILTER]] [-n [FILTER]] [-l [FILTER]]
-                      [--format FORMAT] [--state STATE] [-s ENDPOINT_NAME]
+                      [-lv [FILTER]] [--state STATE] [-s ENDPOINT_NAME]
                       [-m ENDPOINT_NAME] [-u ENDPOINT_NAME]
                       [--config-file CONFIG_FILE]
 
@@ -24,12 +24,13 @@ Control ssh endpoints.
 optional arguments:
   -h, --help            show this help message and exit
   -a [FILTER], --all [FILTER]
-                        Mount all endpoints matching the (optional) filter.
+                        Mount endpoints matching the (optional) filter.
   -n [FILTER], --none [FILTER]
-                        Unmount all endpoints matching the (optional) filter.
+                        Unmount endpoints matching the (optional) filter.
   -l [FILTER], --list [FILTER]
                         List endpoints.
-  --format FORMAT       Format used to print endpoints.
+  -lv [FILTER], --listv [FILTER]
+                        List endpoints.
   --state STATE         Filter printed endpoints by state.
   -s ENDPOINT_NAME, --ssh ENDPOINT_NAME
                         SSH into endpoint.
