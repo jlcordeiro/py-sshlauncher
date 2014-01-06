@@ -67,8 +67,7 @@ PARSER_SSH.add_argument('ssh', nargs=1, metavar='ENDPOINT_NAME',
 
 ARGS = PARSER.parse_args()
 
-SERVERS = SServerList()
-SERVERS.add_from_config( ARGS.config_file )
+SERVERS = SServerList(ARGS.config_file)
 
 class Action(object):
     """ Class representing a possible action. """
@@ -82,13 +81,13 @@ class Action(object):
         """ Mount all endpoints. """
         for server in self.endpoints:
             server.mount()
-            server.print_short()
+            print server.str_short
 
     def __unmount_servers(self):
         """ Unmount all endpoints. """
         for server in self.endpoints:
             server.unmount()
-            server.print_short()
+            print server.str_short
 
     def __ssh(self):
         """ Connect into the first endpoint. """
@@ -101,9 +100,9 @@ class Action(object):
 
         for server in self.endpoints:
             if self.name == "listv":
-                server.print_details()
+                print server.str_long
             else:
-                server.print_short()
+                print server.str_short
 
     def get_method(self):
         """Get the method to be run, from the action name."""
@@ -121,7 +120,7 @@ class Action(object):
     def run(self):
         """ Perform the action. """
 
-        if self.endpoints is None:
+        if self.endpoints is None or len(self.endpoints) < 1:
             return -1
 
         self.get_method()()
@@ -147,18 +146,17 @@ def action_factory(args):
 
     # Set the endpoints
     if action.name in ("mount_all", "unmount_all"):
-        action.endpoints = SERVERS.find_all(partial_match=action.name_filter)
+        action.endpoints = SERVERS.find_all_containing(action.name_filter)
     elif action.name in ("ssh", "mount", "unmount"):
-        action.endpoints = [SERVERS.find_one(exact_match=action.name_filter)]
+        action.endpoints = SERVERS.find(action.name_filter)
     elif action.name in ("list", "listv"):
-        endpoints_with_name = SERVERS.find_all(partial_match=action.name_filter)
+        endpoints_with_name = SERVERS.find_all_containing(action.name_filter)
 
         action.endpoints = [e for e in endpoints_with_name
                             if valid_server(e, ARGS.filter_state)]
 
     return action
 
-print ARGS
 if action_factory(ARGS).run() < 0:
     print "Server not found."
     sys.exit(1)
