@@ -1,6 +1,11 @@
+""" Handle servers. """
+
 import os
+import libpymount
 from configobj import ConfigObj
-from PySLSystemCalls import *
+from PySLSystemCalls import ssh
+from PySLSystemCalls import sshfs
+from PySLSystemCalls import is_machine_mounted
 
 IP = "ip"
 PORT = "port"
@@ -50,14 +55,14 @@ class SServer(object):
             mdir = os.path.expanduser(self.details[LPATH])
 
             try:
-                umount( mdir )
+                libpymount.umount(mdir)
                 self.mounted = False
 
                 try:
                     os.rmdir(mdir)
                 except OSError:
                     pass
-            except PySLError as uex:
+            except OSError as uex:
                 print uex
 
     def ssh( self ):
@@ -67,10 +72,10 @@ class SServer(object):
 
 def is_server_mounted(server):
     """ Checks if a server is mounted on the system. """
-    return isMachineMounted(server.details[USER],
-                            server.details[IP],
-                            server.details[RPATH],
-                            server.details[LPATH])
+    return is_machine_mounted(server.details[USER],
+                              server.details[IP],
+                              server.details[RPATH],
+                              server.details[LPATH])
 
 def valid_server(server, wanted_state):
     """ Tells whether or not a server is in the wanted state. The possible
