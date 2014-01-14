@@ -5,7 +5,6 @@ import libpymount
 from configobj import ConfigObj
 from PySLSystemCalls import ssh
 from PySLSystemCalls import sshfs
-from PySLSystemCalls import is_machine_mounted
 
 IP = "ip"
 PORT = "port"
@@ -19,7 +18,9 @@ class SServer(object):
     def __init__(self, name, details):
         self.details = details
         self.name = name
-        self.mounted = is_server_mounted(self)
+
+        search = "%s@%s:%s" % (details[USER], details[IP], details[RPATH])
+        self.mounted = libpymount.is_mounted(search)
 
     @property
     def str_short(self):
@@ -69,13 +70,6 @@ class SServer(object):
         """ SSH into the server. """
         ssh(self.details[USER], self.details[IP], self.details[PORT] )
         return 1
-
-def is_server_mounted(server):
-    """ Checks if a server is mounted on the system. """
-    return is_machine_mounted(server.details[USER],
-                              server.details[IP],
-                              server.details[RPATH],
-                              server.details[LPATH])
 
 def valid_server(server, wanted_state):
     """ Tells whether or not a server is in the wanted state. The possible
