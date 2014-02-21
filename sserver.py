@@ -90,6 +90,7 @@ class SServerList(object):
         config = ConfigObj(final_path)
 
         self.servers = [SServer(cname, config[cname]) for cname in config]
+        self.servers.sort(key=lambda s: s.name)
 
     def find_all_containing(self, name):
         """ Get the servers that have a name matching the provided term. """
