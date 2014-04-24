@@ -3,7 +3,7 @@
 from setuptools import setup, find_packages
 
 setup(name='sshlauncher',
-      version='0.1.0',
+      version='0.1.1',
       description='Quickly ssh/mount/unmount into another machine',
       author='Joao Cordeiro',
       author_email='jlcordeiro@gmail.com',
