@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-""" Quickly ssh/mount/unmount into another machine. """
+""" Quickly ssh/sftp/mount/unmount into another machine. """
 
 import sys
 import argparse
@@ -65,6 +65,13 @@ PARSER_SSH = SUBPARSERS.add_parser('ssh', help='SSH into server.')
 PARSER_SSH.add_argument('ssh', nargs=1, metavar='ENDPOINT_NAME',
                         help='SSH into endpoint.')
 
+# sftp sub command
+
+PARSER_SFTP = SUBPARSERS.add_parser('sftp', help='SFTP into server.')
+
+PARSER_SFTP.add_argument('sftp', nargs=1, metavar='ENDOINT_NAME',
+                        help='SFTP into endpoint.')
+
 ARGS = PARSER.parse_args()
 
 SERVERS = SServerList(ARGS.config_file)
@@ -93,6 +100,10 @@ class Action(object):
         """ Connect into the first endpoint. """
         self.endpoints[0].ssh()
 
+    def __sftp(self):
+        """ SFTP into the first endpoint. """
+        self.endpoints[0].sftp()
+
     def __list_servers(self):
         """ Prints all the endpoints.
             print mode - prints details if 'verbose',
@@ -113,6 +124,7 @@ class Action(object):
                 "mount_all":    self.__mount_servers,
                 "unmount_all":  self.__unmount_servers,
                 "ssh":          self.__ssh,
+                "sftp":         self.__sftp,
                 "mount":        self.__mount_servers,
                 "unmount":      self.__unmount_servers
                 }[self.name]
@@ -137,6 +149,8 @@ def action_factory(args):
         action = Action(a_name, a_filter)
     elif "ssh" in args:
         action = Action("ssh", args.ssh[0])
+    elif "sftp" in args:
+        action = Action("sftp", args.sftp[0])
     elif "mount" in args:
         a_name = "mount_all" if args.all is True else "mount"
         action = Action(a_name, args.mount[0])
@@ -147,7 +161,7 @@ def action_factory(args):
     # Set the endpoints
     if action.name in ("mount_all", "unmount_all"):
         action.endpoints = SERVERS.find_all_containing(action.name_filter)
-    elif action.name in ("ssh", "mount", "unmount"):
+    elif action.name in ("ssh", "sftp", "mount", "unmount"):
         action.endpoints = SERVERS.find(action.name_filter)
     elif action.name in ("list", "listv"):
         endpoints_with_name = SERVERS.find_all_containing(action.name_filter)

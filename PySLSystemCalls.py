@@ -22,3 +22,8 @@ def sshfs(suser, sip, sport, spath, mountpoint):
     res = os.system( command )
 
     return (res == 0)
+
+def sftp(suser, sip, sport, spath):
+    """ SFTP into machine. """
+    command = "sftp -P%d %s@%s:%s" % (int(sport), suser, sip, spath)
+    os.system( command )
