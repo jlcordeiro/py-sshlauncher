@@ -6,8 +6,10 @@ Quickly ssh/mount/unmount into another machine (by name from a list of known mac
 Dependencies
 ============
 
-libpymount
 sshfs
+argparse
+setuptools
+libpymount
 
 Installing
 ==========
