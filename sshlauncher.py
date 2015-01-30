@@ -3,6 +3,7 @@
 """ Quickly ssh/sftp/mount/unmount into another machine. """
 
 import sys
+from pprint import pprint
 import argparse
 from sserver import valid_server
 from sserver import SServerList
@@ -29,6 +30,10 @@ PARSER_LST.add_argument('list', nargs='?', metavar='FILTER',
 PARSER_LST.add_argument('-v', '--verbose',
                         dest='verbose', action='store_true', default='false',
                         help='Verbose mode.')
+
+PARSER_LST.add_argument('--dump',
+                        dest='dump', action='store_true', default='false',
+                        help='Dump all data from config file.')
 
 PARSER_LST.add_argument('--state',
                         dest='filter_state', action='store',
@@ -112,6 +117,9 @@ class Action(object):
         for server in self.endpoints:
             if self.name == "listv":
                 print server.str_long
+            elif self.name == "listd":
+                print "\n", server.name
+                pprint(dict(server.details))
             else:
                 print server.str_short
 
@@ -121,6 +129,7 @@ class Action(object):
         return  {
                 "list":         self.__list_servers,
                 "listv":        self.__list_servers,
+                "listd":        self.__list_servers,
                 "mount_all":    self.__mount_servers,
                 "unmount_all":  self.__unmount_servers,
                 "ssh":          self.__ssh,
@@ -145,7 +154,7 @@ def action_factory(args):
     action = None
     if "list" in args:
         a_filter = args.list if args.list else ""
-        a_name = "listv" if args.verbose is True else "list"
+        a_name = "listv" if args.verbose is True else "listd" if args.dump is True else "list"
         action = Action(a_name, a_filter)
     elif "ssh" in args:
         action = Action("ssh", args.ssh[0])
@@ -163,7 +172,7 @@ def action_factory(args):
         action.endpoints = SERVERS.find_all_containing(action.name_filter)
     elif action.name in ("ssh", "sftp", "mount", "unmount"):
         action.endpoints = SERVERS.find(action.name_filter)
-    elif action.name in ("list", "listv"):
+    elif action.name in ("list", "listv", "listd"):
         endpoints_with_name = SERVERS.find_all_containing(action.name_filter)
 
         action.endpoints = [e for e in endpoints_with_name
