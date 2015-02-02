@@ -3,9 +3,7 @@
 import os
 import libpymount
 from configobj import ConfigObj
-from PySLSystemCalls import ssh
-from PySLSystemCalls import sftp
-from PySLSystemCalls import sshfs
+from systemcalls import *
 
 IP = "ip"
 PORT = "port"
@@ -57,7 +55,7 @@ class SServer(object):
             mdir = os.path.expanduser(self.details[LPATH])
 
             try:
-                libpymount.umount(mdir)
+                unmount(mdir)
                 self.mounted = False
 
                 try:

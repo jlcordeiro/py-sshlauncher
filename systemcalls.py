@@ -2,11 +2,13 @@
 
 import os
 import errno
+from subprocess import check_call, CalledProcessError
+
 
 def ssh(suser, sip, sport):
     """ SSH into machine. """
     command = "ssh -p %d %s@%s" % (int(sport), suser, sip)
-    os.system( command )
+    os.system(command)
 
 def sshfs(suser, sip, sport, spath, mountpoint):
     """ Mount machine using sshfs (os.system). """
@@ -19,11 +21,20 @@ def sshfs(suser, sip, sport, spath, mountpoint):
                                               sip,
                                               spath,
                                               mountpoint)
-    res = os.system( command )
+    res = os.system(command)
 
     return (res == 0)
+
 
 def sftp(suser, sip, sport, spath):
     """ SFTP into machine. """
     command = "sftp -P%d %s@%s:%s" % (int(sport), suser, sip, spath)
-    os.system( command )
+    os.system(command)
+
+
+def unmount(mountpoint):
+    """ Unmount point without root permissions. """
+    try:
+        check_call(['fusermount', '-u', mountpoint])
+    except CalledProcessError, cpe:
+        raise OSError(cpe.returncode, "fusermount failed. " + str(cpe.output))

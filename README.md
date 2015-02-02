@@ -7,6 +7,7 @@ Dependencies
 ============
 
 sshfs
+fusermount
 argparse
 setuptools
 libpymount
