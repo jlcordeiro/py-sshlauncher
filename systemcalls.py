@@ -21,9 +21,7 @@ def sshfs(suser, sip, sport, spath, mountpoint):
                                               sip,
                                               spath,
                                               mountpoint)
-    res = os.system(command)
-
-    return (res == 0)
+    return os.system(command) == 0
 
 
 def sftp(suser, sip, sport, spath):

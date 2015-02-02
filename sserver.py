@@ -43,11 +43,18 @@ class SServer(object):
             if os.path.isdir(mdir) is False:
                 os.mkdir(mdir)
 
-            self.mounted = sshfs(self.details[USER],
-                                 self.details[IP],
-                                 self.details[PORT],
-                                 self.details[RPATH],
-                                 mdir)
+            res = sshfs(self.details[USER],
+                        self.details[IP],
+                        self.details[PORT],
+                        self.details[RPATH],
+                        mdir)
+
+            # if mounting fails for some reason, make sure mtab is clean
+            # mark the server as mounted anyway to begin with,
+            # so that unmount runs
+            self.mounted = True
+            if res is not True:
+                self.unmount()
 
     def unmount( self ):
         """ Unmount the server. """
