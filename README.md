@@ -10,7 +10,6 @@ sshfs
 fusermount
 argparse
 setuptools
-libpymount
 
 Installing
 ==========

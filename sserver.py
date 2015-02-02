@@ -1,7 +1,6 @@
 """ Handle servers. """
 
 import os
-import libpymount
 from configobj import ConfigObj
 from systemcalls import *
 
@@ -18,8 +17,8 @@ class SServer(object):
         self.details = details
         self.name = name
 
-        search = "%s@%s:%s" % (details[USER], details[IP], details[RPATH])
-        self.mounted = libpymount.is_mounted(search)
+        mdir = os.path.expanduser(details[LPATH])
+        self.mounted = os.path.ismount(mdir)
 
     @property
     def str_short(self):
