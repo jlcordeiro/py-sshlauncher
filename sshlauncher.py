@@ -27,14 +27,6 @@ PARSER_LST = SUBPARSERS.add_parser('list', help='List servers.')
 PARSER_LST.add_argument('list', nargs='?', metavar='FILTER',
                         help='List endpoints.')
 
-PARSER_LST.add_argument('-v', '--verbose',
-                        dest='verbose', action='store_true', default='false',
-                        help='Verbose mode.')
-
-PARSER_LST.add_argument('--dump',
-                        dest='dump', action='store_true', default='false',
-                        help='Dump all data from config file.')
-
 PARSER_LST.add_argument('--state',
                         dest='filter_state', action='store',
                         metavar='STATE', default='any',
@@ -110,42 +102,26 @@ class Action(object):
         self.endpoints[0].sftp()
 
     def __list_servers(self):
-        """ Prints all the endpoints.
-            print mode - prints details if 'verbose',
-            otherwise it just prints the server name """
-
+        """ Prints all the endpoints. """
         for server in self.endpoints:
-            if self.name == "listv":
-                print(server.str_long)
-            elif self.name == "listd":
-                print("\n", server.name)
-                pprint(dict(server.details))
-            else:
-                print(server.str_short)
-
-    def get_method(self):
-        """Get the method to be run, from the action name."""
-
-        return  {
-                "list":         self.__list_servers,
-                "listv":        self.__list_servers,
-                "listd":        self.__list_servers,
-                "mount_all":    self.__mount_servers,
-                "unmount_all":  self.__unmount_servers,
-                "ssh":          self.__ssh,
-                "sftp":         self.__sftp,
-                "mount":        self.__mount_servers,
-                "unmount":      self.__unmount_servers
-                }[self.name]
+            print(server.str_long)
 
     def run(self):
         """ Perform the action. """
 
         if self.endpoints is None or len(self.endpoints) < 1:
+            print("Server not found.")
             return -1
 
-        self.get_method()()
-        return 0
+        {
+            "list":         self.__list_servers,
+            "mount_all":    self.__mount_servers,
+            "unmount_all":  self.__unmount_servers,
+            "ssh":          self.__ssh,
+            "sftp":         self.__sftp,
+            "mount":        self.__mount_servers,
+            "unmount":      self.__unmount_servers
+        }[self.name]()
 
 def action_factory(args):
     """ Create an action based on the command arguments. """
@@ -154,7 +130,7 @@ def action_factory(args):
     action = None
     if "list" in args:
         a_filter = args.list if args.list else ""
-        a_name = "listv" if args.verbose is True else "listd" if args.dump is True else "list"
+        a_name = "list"
         action = Action(a_name, a_filter)
     elif "ssh" in args:
         action = Action("ssh", args.ssh[0])
@@ -172,7 +148,7 @@ def action_factory(args):
         action.endpoints = SERVERS.find_all_containing(action.name_filter)
     elif action.name in ("ssh", "sftp", "mount", "unmount"):
         action.endpoints = SERVERS.find(action.name_filter)
-    elif action.name in ("list", "listv", "listd"):
+    elif action.name == "list":
         endpoints_with_name = SERVERS.find_all_containing(action.name_filter)
 
         action.endpoints = [e for e in endpoints_with_name
@@ -180,8 +156,5 @@ def action_factory(args):
 
     return action
 
-if action_factory(ARGS).run() < 0:
-    print("Server not found.")
-    sys.exit(1)
-
-sys.exit(0)
+if __name__ == "__main__":
+    action_factory(ARGS).run()
