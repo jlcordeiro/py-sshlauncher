@@ -69,7 +69,7 @@ class SServer(object):
                 except OSError:
                     pass
             except OSError as uex:
-                print uex
+                print(uex)
 
     def sftp(self):
         """ SFTP into the server. """

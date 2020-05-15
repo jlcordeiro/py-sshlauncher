@@ -93,13 +93,13 @@ class Action(object):
         """ Mount all endpoints. """
         for server in self.endpoints:
             server.mount()
-            print server.str_short
+            print(server.str_short)
 
     def __unmount_servers(self):
         """ Unmount all endpoints. """
         for server in self.endpoints:
             server.unmount()
-            print server.str_short
+            print(server.str_short)
 
     def __ssh(self):
         """ Connect into the first endpoint. """
@@ -116,12 +116,12 @@ class Action(object):
 
         for server in self.endpoints:
             if self.name == "listv":
-                print server.str_long
+                print(server.str_long)
             elif self.name == "listd":
-                print "\n", server.name
+                print("\n", server.name)
                 pprint(dict(server.details))
             else:
-                print server.str_short
+                print(server.str_short)
 
     def get_method(self):
         """Get the method to be run, from the action name."""
@@ -181,7 +181,7 @@ def action_factory(args):
     return action
 
 if action_factory(ARGS).run() < 0:
-    print "Server not found."
+    print("Server not found.")
     sys.exit(1)
 
 sys.exit(0)

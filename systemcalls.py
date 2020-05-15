@@ -34,5 +34,5 @@ def unmount(mountpoint):
     """ Unmount point without root permissions. """
     try:
         check_call(['fusermount', '-u', mountpoint])
-    except CalledProcessError, cpe:
+    except CalledProcessError as cpe:
         raise OSError(cpe.returncode, "fusermount failed. " + str(cpe.output))
