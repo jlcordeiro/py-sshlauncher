@@ -22,7 +22,7 @@ class SServer(object):
     @property
     def str_short(self):
         """ Return server info. Summary. """
-        symbol = " [*]" if self.is_mounted() is True else " [ ]"
+        symbol = " [*]" if self.is_mounted() else " [ ]"
         return "%s %s" % (symbol, self.name)
 
     @property
@@ -55,8 +55,7 @@ class SServer(object):
                 # if mounting fails for some reason, make sure mtab is clean
                 # mark the server as mounted anyway to begin with,
                 # so that unmount runs
-                if res is not True:
-                    self.unmount()
+                self.unmount()
 
     def unmount( self ):
         """ Unmount the server. """
@@ -67,10 +66,8 @@ class SServer(object):
                 command = self._replace_tokens("fusermount -u {MOUNTPOINT}")
                 os.system(command)
 
-                try:
+                if os.path.isdir(mdir):
                     os.rmdir(mdir)
-                except OSError:
-                    pass
             except OSError as uex:
                 print(uex)
 
