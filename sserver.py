@@ -2,7 +2,6 @@
 
 import os
 from configobj import ConfigObj
-from systemcalls import *
 
 IP = "ip"
 PORT = "port"
@@ -17,13 +16,13 @@ class SServer(object):
         self.details = details
         self.name = name
 
-        mdir = os.path.expanduser(details[LPATH])
-        self.mounted = os.path.ismount(mdir)
+    def is_mounted(self):
+        return os.path.ismount(os.path.expanduser(self.details[LPATH]))
 
     @property
     def str_short(self):
         """ Return server info. Summary. """
-        symbol = " [*]" if self.mounted is True else " [ ]"
+        symbol = " [*]" if self.is_mounted() is True else " [ ]"
         return "%s %s" % (symbol, self.name)
 
     @property
@@ -35,34 +34,38 @@ class SServer(object):
                                           self.details[PORT],
                                           self.details[LPATH])
 
+    def _replace_tokens(self, cmd):
+        return cmd.replace("{PORT}", self.details[PORT])   \
+                  .replace("{USER}", self.details[USER])   \
+                  .replace("{IP}", self.details[IP])       \
+                  .replace("{RPATH}", self.details[RPATH]) \
+                  .replace("{MOUNTPOINT}", self.details[LPATH])
+
     def mount( self ):
         """ Mount the server. """
-        if not self.mounted:
+        if not self.is_mounted():
             mdir = os.path.expanduser(self.details[LPATH])
             if os.path.isdir(mdir) is False:
                 os.mkdir(mdir)
 
-            res = sshfs(self.details[USER],
-                        self.details[IP],
-                        self.details[PORT],
-                        self.details[RPATH],
-                        mdir)
-
-            # if mounting fails for some reason, make sure mtab is clean
-            # mark the server as mounted anyway to begin with,
-            # so that unmount runs
-            self.mounted = True
-            if res is not True:
-                self.unmount()
+            try:
+                command= self._replace_tokens("sshfs -C -p {PORT} {USER}@{IP}:{RPATH} {MOUNTPOINT}")
+                os.system(command)
+            except:
+                # if mounting fails for some reason, make sure mtab is clean
+                # mark the server as mounted anyway to begin with,
+                # so that unmount runs
+                if res is not True:
+                    self.unmount()
 
     def unmount( self ):
         """ Unmount the server. """
-        if self.mounted:
+        if self.is_mounted():
             mdir = os.path.expanduser(self.details[LPATH])
 
             try:
-                unmount(mdir)
-                self.mounted = False
+                command = self._replace_tokens("fusermount -u {MOUNTPOINT}")
+                os.system(command)
 
                 try:
                     os.rmdir(mdir)
@@ -73,15 +76,14 @@ class SServer(object):
 
     def sftp(self):
         """ SFTP into the server. """
-        sftp(self.details[USER],
-             self.details[IP],
-             self.details[PORT],
-             self.details[RPATH])
+        command = self._replace_tokens("sftp -P{PORT} {USER}@{IP}:{RPATH}")
+        os.system(command)
+
 
     def ssh( self ):
         """ SSH into the server. """
-        ssh(self.details[USER], self.details[IP], self.details[PORT] )
-        return 1
+        command = self._replace_tokens("ssh -p {PORT} {USER}@{IP}")
+        os.system(command)
 
 def valid_server(server, wanted_state):
     """ Tells whether or not a server is in the wanted state. The possible
