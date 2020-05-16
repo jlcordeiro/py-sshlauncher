@@ -6,11 +6,11 @@ import os
 import sys
 from configobj import ConfigObj
 
-COMMANDS = {"list":     "echo \"{NAME} {USER}@{IP}:{PORT} on {MOUNTPOINT}\"",
-            "mount":    "mkdir -p {MOUNTPOINT} && sshfs -C -p {PORT} {USER}@{IP}:{RPATH} {MOUNTPOINT}",
-            "unmount":  "fusermount -u {MOUNTPOINT}; rmdir {MOUNTPOINT}",
-            "sftp":     "sftp -P{PORT} {USER}@{IP}:{RPATH}",
-            "ssh":      "ssh -p {PORT} {USER}@{IP}"
+COMMANDS = {"list":     ("echo \"{NAME} {USER}@{IP}:{PORT} on {MOUNTPOINT}\"", "opt:apply_to_all"),
+            "mount":    ("mkdir -p {MOUNTPOINT} && sshfs -C -p {PORT} {USER}@{IP}:{RPATH} {MOUNTPOINT}",),
+            "unmount":  ("fusermount -u {MOUNTPOINT}; rmdir {MOUNTPOINT}",),
+            "sftp":     ("sftp -P{PORT} {USER}@{IP}:{RPATH}",),
+            "ssh":      ("ssh -p {PORT} {USER}@{IP}",)
            }
 
 class Endpoint(object):
@@ -27,7 +27,7 @@ class Endpoint(object):
         self.name = name
 
     def run(self, action):
-        cmd = COMMANDS[action] \
+        cmd = COMMANDS[action][0] \
                  .replace("{PORT}", self.details[self.PORT])   \
                  .replace("{USER}", self.details[self.USER])   \
                  .replace("{IP}", self.details[self.IP])       \
@@ -37,20 +37,31 @@ class Endpoint(object):
 
         os.system(cmd)
 
+def command_applies_to_all(command_name):
+    """
+    Returns whether or not the command with the given name should
+    be ran for all the endpoints in the configuration file (True)
+    or only for the endpoints provided as parameter (False)
+    """
+    return "opt:apply_to_all" in COMMANDS[command_name]
 
 def run(command_name, server_names):
     CONFIG = ConfigObj(os.path.expanduser('~/.remotes_config'))
-    servers = [Endpoint(cname, CONFIG[cname])
-                for cname in CONFIG
-                if cname in server_names or command_name == "list"]
-    servers.sort(key=lambda s: s.name)
 
-    if servers is None or len(servers) < 1:
-        print("Server not found.")
-        return -1
+    # if a command that should apply to all endpoints
+    if command_applies_to_all(command_name):
+        server_names.sort()
+        for ep in CONFIG:
+            Endpoint(ep, CONFIG[ep]).run(command_name)
+        return
 
-    for s in servers:
-        s.run(command_name)
+    
+    for ep in server_names:
+        if ep in CONFIG:
+            Endpoint(ep, CONFIG[ep]).run(command_name)
+        else:
+            print("Endpoint {} not found in config.", ep)
+
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
