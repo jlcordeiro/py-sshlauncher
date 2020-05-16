@@ -2,6 +2,7 @@
 
 import os
 
+NAME = "name"
 IP = "ip"
 PORT = "port"
 USER = "user"
@@ -13,32 +14,21 @@ class SServer(object):
     """ Class that represents a server. """
     def __init__(self, name, details):
         self.details = details
+        self.details[NAME] = name
         self.name = name
-
-    def is_mounted(self):
-        return os.path.ismount(os.path.expanduser(self.details[LPATH]))
-
-    @property
-    def str_short(self):
-        """ Return server info. Summary. """
-        symbol = " [*]" if self.is_mounted() else " [ ]"
-        return "%s %s" % (symbol, self.name)
-
-    @property
-    def str_long(self):
-        """ Return server info. Verbose. """
-        return "%s --- %s@%s:%s on %s" % (self.str_short,
-                                          self.details[USER],
-                                          self.details[IP],
-                                          self.details[PORT],
-                                          self.details[LPATH])
 
     def _replace_tokens(self, cmd):
         return cmd.replace("{PORT}", self.details[PORT])   \
                   .replace("{USER}", self.details[USER])   \
                   .replace("{IP}", self.details[IP])       \
                   .replace("{RPATH}", self.details[RPATH]) \
+                  .replace("{NAME}", self.details[NAME]) \
                   .replace("{MOUNTPOINT}", os.path.expanduser(self.details[LPATH]))
+
+    def echo(self):
+        """ Return server info. Verbose. """
+        command = self._replace_tokens("echo \"{NAME} {USER}@{IP}:{PORT} on {MOUNTPOINT}\"")
+        os.system(command)
 
     def mount( self ):
         """ Mount the server. """

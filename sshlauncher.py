@@ -26,13 +26,11 @@ class Action(object):
         """ Mount all endpoints. """
         for s in self.servers:
             s.mount()
-            print(s.str_short)
 
     def __unmount_servers(self):
         """ Unmount all endpoints. """
         for s in self.servers:
             s.unmount()
-            print(s.str_short)
 
     def __ssh(self):
         """ Connect into the first endpoint. """
@@ -47,7 +45,7 @@ class Action(object):
     def __list_servers(self):
         """ Prints all the endpoints. """
         for s in self.servers:
-            print(s.str_long)
+            s.echo()
 
     def run(self):
         """ Perform the action. """
