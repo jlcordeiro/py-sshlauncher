@@ -55,9 +55,7 @@ class SServer(object):
         command = self._replace_tokens("sftp -P{PORT} {USER}@{IP}:{RPATH}")
         os.system(command)
 
-
     def ssh( self ):
         """ SSH into the server. """
         command = self._replace_tokens("ssh -p {PORT} {USER}@{IP}")
         os.system(command)
-

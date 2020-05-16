@@ -3,45 +3,12 @@
 """ Quickly ssh/sftp/mount/unmount into another machine. """
 
 import os
-import argparse
+import sys
 from sserver import SServer
 from configobj import ConfigObj
 
 
-# create the top-level parser
-PARSER = argparse.ArgumentParser(description='Control ssh endpoints.')
-
-PARSER.add_argument('--config-file',
-                    dest='config_file', action='store',
-                    nargs=1, metavar='CONFIG_FILE',
-                    default='~/.remotes_config',
-                    help='Configuration file to be user.')
-
-SUBPARSERS = PARSER.add_subparsers(help='sub-command help')
-
-# list sub command
-PARSER_LST = SUBPARSERS.add_parser('list', help='List servers.')
-PARSER_LST.add_argument('list', nargs='?', metavar='FILTER',
-                        help='List endpoints.')
-
-PARSER_MNT = SUBPARSERS.add_parser('mount', help='Mount servers.')
-PARSER_MNT.add_argument('mount', nargs=1, metavar='ENDPOINT_NAME',
-                        help='Mount the endpoint with the specified name.')
-
-PARSER_UMT = SUBPARSERS.add_parser('unmount', help='Unmount servers.')
-PARSER_UMT.add_argument('unmount', nargs=1, metavar='ENDPOINT_NAME',
-                        help='Unmount endpoints.')
-
-PARSER_SSH = SUBPARSERS.add_parser('ssh', help='SSH into server.')
-PARSER_SSH.add_argument('ssh', nargs=1, metavar='ENDPOINT_NAME',
-                        help='SSH into endpoint.')
-
-PARSER_SFTP = SUBPARSERS.add_parser('sftp', help='SFTP into server.')
-PARSER_SFTP.add_argument('sftp', nargs=1, metavar='ENDOINT_NAME',
-                        help='SFTP into endpoint.')
-
-ARGS = PARSER.parse_args()
-CONFIG = ConfigObj(os.path.expanduser(ARGS.config_file))
+CONFIG = ConfigObj(os.path.expanduser('~/.remotes_config'))
 
 class Action(object):
     """ Class representing a possible action. """
@@ -97,21 +64,11 @@ class Action(object):
             "unmount":      self.__unmount_servers
         }[self.command_name]()
 
-def action_factory(args):
-    """ Create an action based on the command arguments. """
-    # Create the action
-    if "list" in args:
-        action = Action("list", "")
-    elif "ssh" in args:
-        action = Action("ssh", args.ssh)
-    elif "sftp" in args:
-        action = Action("sftp", args.sftp)
-    elif "mount" in args:
-        action = Action("mount", args.mount)
-    elif "unmount" in args:
-        action = Action("unmount", args.unmount)
-
-    return action
-
 if __name__ == "__main__":
-    action_factory(ARGS).run()
+    if len(sys.argv) < 2:
+        print("usage: {} {list,mount,unmount,ssh,sftp} [ep1, ep2, ...]", sys.argv[0])
+        sys.exit(1)
+
+    (command, endpoints) = (sys.argv[1], sys.argv[2:])
+    action = Action(command, endpoints)
+    action.run()
