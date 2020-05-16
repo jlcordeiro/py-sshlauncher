@@ -4,40 +4,26 @@
 
 import os
 import sys
-from configobj import ConfigObj
+import json
 
-COMMANDS = {"list":     ("echo \"{NAME} {USER}@{IP}:{PORT} on {MOUNTPOINT}\"", "opt:apply_to_all"),
-            "mount":    ("mkdir -p {MOUNTPOINT} && sshfs -C -p {PORT} {USER}@{IP}:{RPATH} {MOUNTPOINT}",),
-            "unmount":  ("fusermount -u {MOUNTPOINT}; rmdir {MOUNTPOINT}",),
-            "sftp":     ("sftp -P{PORT} {USER}@{IP}:{RPATH}",),
-            "yafc":     ("yafc sftp://{USER}@{IP}:{PORT}/{RPATH}",),
-            "ssh":      ("ssh -p {PORT} {USER}@{IP}",),
-            "mysql":    ("mysql -h{IP} -u{USER} -P{PORT} -p {DATABASE}",)
+COMMANDS = {"list":     ("echo \"{_name} {_user}@{_ip}:{_port} on {_mountpoint}\"", "opt:apply_to_all"),
+            "mount":    ("mkdir -p {_mountpoint} && sshfs -C -p {_port} {_user}@{_ip}:{_remotepath} {_mountpoint}",),
+            "unmount":  ("fusermount -u {_mountpoint}; rmdir {_mountpoint}",),
+            "sftp":     ("sftp -P{_port} {_user}@{_ip}:{_remotepath}",),
+            "yafc":     ("yafc sftp://{_user}@{_ip}:{_port}/{_remotepath}",),
+            "ssh":      ("ssh -p {_port} {_user}@{_ip}",),
+            "mysql":    ("mysql -h{_ip} -u{_user} -P{_port} -p {_database}",)
            }
 
 def run_command(config, command_name, endpoint_name):
     """ Run a command on the specified endpoint. """
 
-    NAME = "name"
-    IP = "ip"
-    PORT = "port"
-    USER = "user"
-    RPATH = "remotepath"
-    LPATH = "mountpoint"
-    DATABASE = "database"
+    ep_details = config[endpoint_name]
 
-    def endpoint_config(what): 
-        ep_details = config[endpoint_name]
-        return ep_details[what] if what in ep_details else ""
-
-    cmd = COMMANDS[command_name][0] \
-             .replace("{PORT}", endpoint_config(PORT))   \
-             .replace("{USER}", endpoint_config(USER))   \
-             .replace("{IP}", endpoint_config(IP))       \
-             .replace("{RPATH}", endpoint_config(RPATH)) \
-             .replace("{DATABASE}", endpoint_config(DATABASE)) \
-             .replace("{NAME}", endpoint_name) \
-             .replace("{MOUNTPOINT}", os.path.expanduser(endpoint_config(LPATH)))
+    cmd = COMMANDS[command_name][0]
+    for placeholder in ("{_port}", "{_user}", "{_ip}", "{_remotepath}", "{_database}", "{_name}", "{_mountpoint}"):
+        value = ep_details[placeholder[1:-1]] if placeholder[1:-1] in ep_details else ""
+        cmd = cmd.replace(placeholder, value)
 
     os.system(cmd)
 
@@ -60,7 +46,8 @@ if __name__ == "__main__":
         sys.exit(1)
 
     (command_name, endpoints) = (sys.argv[1], sys.argv[2:])
-    config = ConfigObj(os.path.expanduser('~/.remotes_config'))
+    with open(os.path.expanduser('~/.remotes_config.json')) as json_file:
+        config = json.load(json_file)
 
     for ep in config:
         if ep in endpoints or command_applies_to_all(command_name):
