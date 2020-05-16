@@ -2,11 +2,13 @@
 
 """ Quickly ssh/sftp/mount/unmount into another machine. """
 
+import os
 import argparse
-from sserver import valid_server
-from sserver import SServerList
+from sserver import SServer
+from configobj import ConfigObj
 
 
+# create the top-level parser
 PARSER = argparse.ArgumentParser(description='Control ssh endpoints.')
 
 PARSER.add_argument('--config-file',
@@ -15,106 +17,80 @@ PARSER.add_argument('--config-file',
                     default='~/.remotes_config',
                     help='Configuration file to be user.')
 
-# create the top-level parser
 SUBPARSERS = PARSER.add_subparsers(help='sub-command help')
 
 # list sub command
-
 PARSER_LST = SUBPARSERS.add_parser('list', help='List servers.')
-
 PARSER_LST.add_argument('list', nargs='?', metavar='FILTER',
                         help='List endpoints.')
 
-PARSER_LST.add_argument('--state',
-                        dest='filter_state', action='store',
-                        metavar='STATE', default='any',
-                        choices=['mounted','unmounted','any'],
-                        help='Filter by state.')
-
-# mount sub command
-
 PARSER_MNT = SUBPARSERS.add_parser('mount', help='Mount servers.')
-
 PARSER_MNT.add_argument('mount', nargs=1, metavar='ENDPOINT_NAME',
                         help='Mount the endpoint with the specified name.')
 
-PARSER_MNT.add_argument('-a', '--all',
-                        dest='all', action='store_true', default='false',
-                        help='Mount endpoints matching the (optional) filter.')
-
-# unmount sub command
-
 PARSER_UMT = SUBPARSERS.add_parser('unmount', help='Unmount servers.')
-
 PARSER_UMT.add_argument('unmount', nargs=1, metavar='ENDPOINT_NAME',
                         help='Unmount endpoints.')
 
-PARSER_UMT.add_argument('-a', '--all',
-                        dest='all', action='store_true', default='false',
-                       help='Unmount endpoints matching the (optional) filter.')
-
-# ssh sub command
-
 PARSER_SSH = SUBPARSERS.add_parser('ssh', help='SSH into server.')
-
 PARSER_SSH.add_argument('ssh', nargs=1, metavar='ENDPOINT_NAME',
                         help='SSH into endpoint.')
 
-# sftp sub command
-
 PARSER_SFTP = SUBPARSERS.add_parser('sftp', help='SFTP into server.')
-
 PARSER_SFTP.add_argument('sftp', nargs=1, metavar='ENDOINT_NAME',
                         help='SFTP into endpoint.')
 
 ARGS = PARSER.parse_args()
-
-SERVERS = SServerList(ARGS.config_file)
+CONFIG = ConfigObj(os.path.expanduser(ARGS.config_file))
 
 class Action(object):
     """ Class representing a possible action. """
 
-    def __init__(self, name, server_name):
+    def __init__(self, name, server_names):
         self.command_name = name
-        self.server_name = server_name
-        self.endpoints = []
+
+        self.servers = [SServer(cname, CONFIG[cname])
+                         for cname in CONFIG
+                         if cname in server_names or name == "list"]
+        self.servers.sort(key=lambda s: s.name)
+
 
     def __mount_servers(self):
         """ Mount all endpoints. """
-        for server in self.endpoints:
-            server.mount()
-            print(server.str_short)
+        for s in self.servers:
+            s.mount()
+            print(s.str_short)
 
     def __unmount_servers(self):
         """ Unmount all endpoints. """
-        for server in self.endpoints:
-            server.unmount()
-            print(server.str_short)
+        for s in self.servers:
+            s.unmount()
+            print(s.str_short)
 
     def __ssh(self):
         """ Connect into the first endpoint. """
-        self.endpoints[0].ssh()
+        for s in self.servers:
+            s.ssh()
 
     def __sftp(self):
         """ SFTP into the first endpoint. """
-        self.endpoints[0].sftp()
+        for s in self.servers:
+            s.sftp()
 
     def __list_servers(self):
         """ Prints all the endpoints. """
-        for server in self.endpoints:
-            print(server.str_long)
+        for s in self.servers:
+            print(s.str_long)
 
     def run(self):
         """ Perform the action. """
 
-        if self.endpoints is None or len(self.endpoints) < 1:
+        if self.servers is None or len(self.servers) < 1:
             print("Server not found.")
             return -1
 
         {
             "list":         self.__list_servers,
-            "mount_all":    self.__mount_servers,
-            "unmount_all":  self.__unmount_servers,
             "ssh":          self.__ssh,
             "sftp":         self.__sftp,
             "mount":        self.__mount_servers,
@@ -123,31 +99,17 @@ class Action(object):
 
 def action_factory(args):
     """ Create an action based on the command arguments. """
-
     # Create the action
     if "list" in args:
-        action = Action("list", args.list)
+        action = Action("list", "")
     elif "ssh" in args:
-        action = Action("ssh", args.ssh[0])
+        action = Action("ssh", args.ssh)
     elif "sftp" in args:
-        action = Action("sftp", args.sftp[0])
+        action = Action("sftp", args.sftp)
     elif "mount" in args:
-        a_name = "mount_all" if args.all is True else "mount"
-        action = Action(a_name, args.mount[0])
+        action = Action("mount", args.mount)
     elif "unmount" in args:
-        a_name = "unmount_all" if args.all is True else "unmount"
-        action = Action(a_name, args.unmount[0])
-
-    # Set the endpoints
-    if action.command_name in ("mount_all", "unmount_all"):
-        action.endpoints = SERVERS.servers
-    elif action.command_name in ("ssh", "sftp", "mount", "unmount"):
-        action.endpoints = SERVERS.find(action.server_name)
-    elif action.command_name == "list":
-        endpoints_with_name = SERVERS.servers
-
-        action.endpoints = [e for e in endpoints_with_name
-                            if valid_server(e, ARGS.filter_state)]
+        action = Action("unmount", args.unmount)
 
     return action
 

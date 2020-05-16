@@ -1,7 +1,6 @@
 """ Handle servers. """
 
 import os
-from configobj import ConfigObj
 
 IP = "ip"
 PORT = "port"
@@ -82,27 +81,3 @@ class SServer(object):
         command = self._replace_tokens("ssh -p {PORT} {USER}@{IP}")
         os.system(command)
 
-def valid_server(server, wanted_state):
-    """ Tells whether or not a server is in the wanted state. The possible
-        values for wanted_state are ('any', 'mounted', 'unmounted') """
-
-    return (wanted_state == 'any') or \
-           (wanted_state == 'mounted' and server.mounted) or \
-           (wanted_state == 'unmounted' and not server.mounted)
-
-class SServerList(object):
-    """ List of servers. """
-
-    def __init__(self, filename):
-        """ Constructor. Appends all servers found on the configuration file
-            to the local list of servers. """
-
-        final_path = os.path.expanduser(filename)
-        config = ConfigObj(final_path)
-
-        self.servers = [SServer(cname, config[cname]) for cname in config]
-        self.servers.sort(key=lambda s: s.name)
-
-    def find(self, name):
-        """ Get the first server that has a name matching the provided name. """
-        return [ s for s in self.servers if name == s.name ][:1]
