@@ -11,9 +11,9 @@ COMMANDS = {"list":     ("echo \"{NAME} {USER}@{IP}:{PORT} on {MOUNTPOINT}\"", "
             "unmount":  ("fusermount -u {MOUNTPOINT}; rmdir {MOUNTPOINT}",),
             "sftp":     ("sftp -P{PORT} {USER}@{IP}:{RPATH}",),
             "yafc":     ("yafc sftp://{USER}@{IP}:{PORT}/{RPATH}",),
-            "ssh":      ("ssh -p {PORT} {USER}@{IP}",)
+            "ssh":      ("ssh -p {PORT} {USER}@{IP}",),
+            "mysql":    ("mysql -h{IP} -u{USER} -P{PORT} -p {DATABASE}",)
            }
-
 
 def run_command(config, command_name, endpoint_name):
     """ Run a command on the specified endpoint. """
@@ -24,15 +24,20 @@ def run_command(config, command_name, endpoint_name):
     USER = "user"
     RPATH = "remotepath"
     LPATH = "mountpoint"
+    DATABASE = "database"
 
-    endpoint_details = config[endpoint_name]
+    def endpoint_config(what): 
+        ep_details = config[endpoint_name]
+        return ep_details[what] if what in ep_details else ""
+
     cmd = COMMANDS[command_name][0] \
-             .replace("{PORT}", endpoint_details[PORT])   \
-             .replace("{USER}", endpoint_details[USER])   \
-             .replace("{IP}", endpoint_details[IP])       \
-             .replace("{RPATH}", endpoint_details[RPATH]) \
+             .replace("{PORT}", endpoint_config(PORT))   \
+             .replace("{USER}", endpoint_config(USER))   \
+             .replace("{IP}", endpoint_config(IP))       \
+             .replace("{RPATH}", endpoint_config(RPATH)) \
+             .replace("{DATABASE}", endpoint_config(DATABASE)) \
              .replace("{NAME}", endpoint_name) \
-             .replace("{MOUNTPOINT}", os.path.expanduser(endpoint_details[LPATH]))
+             .replace("{MOUNTPOINT}", os.path.expanduser(endpoint_config(LPATH)))
 
     os.system(cmd)
 
