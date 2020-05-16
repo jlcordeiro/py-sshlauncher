@@ -10,57 +10,18 @@ from configobj import ConfigObj
 
 CONFIG = ConfigObj(os.path.expanduser('~/.remotes_config'))
 
-class Action(object):
-    """ Class representing a possible action. """
+def run(command_name, server_names):
+    servers = [SServer(cname, CONFIG[cname])
+                for cname in CONFIG
+                if cname in server_names or command_name == "list"]
+    servers.sort(key=lambda s: s.name)
 
-    def __init__(self, name, server_names):
-        self.command_name = name
+    if servers is None or len(servers) < 1:
+        print("Server not found.")
+        return -1
 
-        self.servers = [SServer(cname, CONFIG[cname])
-                         for cname in CONFIG
-                         if cname in server_names or name == "list"]
-        self.servers.sort(key=lambda s: s.name)
-
-
-    def __mount_servers(self):
-        """ Mount all endpoints. """
-        for s in self.servers:
-            s.mount()
-
-    def __unmount_servers(self):
-        """ Unmount all endpoints. """
-        for s in self.servers:
-            s.unmount()
-
-    def __ssh(self):
-        """ Connect into the first endpoint. """
-        for s in self.servers:
-            s.ssh()
-
-    def __sftp(self):
-        """ SFTP into the first endpoint. """
-        for s in self.servers:
-            s.sftp()
-
-    def __list_servers(self):
-        """ Prints all the endpoints. """
-        for s in self.servers:
-            s.echo()
-
-    def run(self):
-        """ Perform the action. """
-
-        if self.servers is None or len(self.servers) < 1:
-            print("Server not found.")
-            return -1
-
-        {
-            "list":         self.__list_servers,
-            "ssh":          self.__ssh,
-            "sftp":         self.__sftp,
-            "mount":        self.__mount_servers,
-            "unmount":      self.__unmount_servers
-        }[self.command_name]()
+    for s in servers:
+        s.run(command_name)
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
@@ -68,5 +29,4 @@ if __name__ == "__main__":
         sys.exit(1)
 
     (command, endpoints) = (sys.argv[1], sys.argv[2:])
-    action = Action(command, endpoints)
-    action.run()
+    run(command, endpoints)
