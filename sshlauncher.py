@@ -4,13 +4,42 @@
 
 import os
 import sys
-from sserver import SServer
 from configobj import ConfigObj
 
+class SServer(object):
+    NAME = "name"
+    IP = "ip"
+    PORT = "port"
+    USER = "user"
+    RPATH = "remotepath"
+    LPATH = "mountpoint"
 
-CONFIG = ConfigObj(os.path.expanduser('~/.remotes_config'))
+    """ Class that represents a server. """
+    def __init__(self, name, details):
+        self.details = details
+        self.details[self.NAME] = name
+        self.name = name
+
+    def run(self, action):
+        cmd = {"list":     "echo \"{NAME} {USER}@{IP}:{PORT} on {MOUNTPOINT}\"",
+               "mount":    "mkdir -p {MOUNTPOINT} && sshfs -C -p {PORT} {USER}@{IP}:{RPATH} {MOUNTPOINT}",
+               "unmount":  "fusermount -u {MOUNTPOINT}; rmdir {MOUNTPOINT}",
+               "sftp":     "sftp -P{PORT} {USER}@{IP}:{RPATH}",
+               "ssh":      "ssh -p {PORT} {USER}@{IP}"
+               }[action]
+
+        cmd = cmd.replace("{PORT}", self.details[self.PORT])   \
+                 .replace("{USER}", self.details[self.USER])   \
+                 .replace("{IP}", self.details[self.IP])       \
+                 .replace("{RPATH}", self.details[self.RPATH]) \
+                 .replace("{NAME}", self.details[self.NAME]) \
+                 .replace("{MOUNTPOINT}", os.path.expanduser(self.details[self.LPATH]))
+
+        os.system(cmd)
+
 
 def run(command_name, server_names):
+    CONFIG = ConfigObj(os.path.expanduser('~/.remotes_config'))
     servers = [SServer(cname, CONFIG[cname])
                 for cname in CONFIG
                 if cname in server_names or command_name == "list"]
