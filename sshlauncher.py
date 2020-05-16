@@ -2,8 +2,6 @@
 
 """ Quickly ssh/sftp/mount/unmount into another machine. """
 
-import sys
-from pprint import pprint
 import argparse
 from sserver import valid_server
 from sserver import SServerList
@@ -76,9 +74,9 @@ SERVERS = SServerList(ARGS.config_file)
 class Action(object):
     """ Class representing a possible action. """
 
-    def __init__(self, name, name_filter):
-        self.name = name
-        self.name_filter = name_filter
+    def __init__(self, name, server_name):
+        self.command_name = name
+        self.server_name = server_name
         self.endpoints = []
 
     def __mount_servers(self):
@@ -121,17 +119,14 @@ class Action(object):
             "sftp":         self.__sftp,
             "mount":        self.__mount_servers,
             "unmount":      self.__unmount_servers
-        }[self.name]()
+        }[self.command_name]()
 
 def action_factory(args):
     """ Create an action based on the command arguments. """
 
     # Create the action
-    action = None
     if "list" in args:
-        a_filter = args.list if args.list else ""
-        a_name = "list"
-        action = Action(a_name, a_filter)
+        action = Action("list", args.list)
     elif "ssh" in args:
         action = Action("ssh", args.ssh[0])
     elif "sftp" in args:
@@ -144,12 +139,12 @@ def action_factory(args):
         action = Action(a_name, args.unmount[0])
 
     # Set the endpoints
-    if action.name in ("mount_all", "unmount_all"):
-        action.endpoints = SERVERS.find_all_containing(action.name_filter)
-    elif action.name in ("ssh", "sftp", "mount", "unmount"):
-        action.endpoints = SERVERS.find(action.name_filter)
-    elif action.name == "list":
-        endpoints_with_name = SERVERS.find_all_containing(action.name_filter)
+    if action.command_name in ("mount_all", "unmount_all"):
+        action.endpoints = SERVERS.servers
+    elif action.command_name in ("ssh", "sftp", "mount", "unmount"):
+        action.endpoints = SERVERS.find(action.server_name)
+    elif action.command_name == "list":
+        endpoints_with_name = SERVERS.servers
 
         action.endpoints = [e for e in endpoints_with_name
                             if valid_server(e, ARGS.filter_state)]

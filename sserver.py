@@ -103,10 +103,6 @@ class SServerList(object):
         self.servers = [SServer(cname, config[cname]) for cname in config]
         self.servers.sort(key=lambda s: s.name)
 
-    def find_all_containing(self, name):
-        """ Get the servers that have a name matching the provided term. """
-        return [ s for s in self.servers if name in s.name ]
-
     def find(self, name):
         """ Get the first server that has a name matching the provided name. """
         return [ s for s in self.servers if name == s.name ][:1]
