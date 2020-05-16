@@ -6,7 +6,14 @@ import os
 import sys
 from configobj import ConfigObj
 
-class SServer(object):
+COMMANDS = {"list":     "echo \"{NAME} {USER}@{IP}:{PORT} on {MOUNTPOINT}\"",
+            "mount":    "mkdir -p {MOUNTPOINT} && sshfs -C -p {PORT} {USER}@{IP}:{RPATH} {MOUNTPOINT}",
+            "unmount":  "fusermount -u {MOUNTPOINT}; rmdir {MOUNTPOINT}",
+            "sftp":     "sftp -P{PORT} {USER}@{IP}:{RPATH}",
+            "ssh":      "ssh -p {PORT} {USER}@{IP}"
+           }
+
+class Endpoint(object):
     NAME = "name"
     IP = "ip"
     PORT = "port"
@@ -17,22 +24,15 @@ class SServer(object):
     """ Class that represents a server. """
     def __init__(self, name, details):
         self.details = details
-        self.details[self.NAME] = name
         self.name = name
 
     def run(self, action):
-        cmd = {"list":     "echo \"{NAME} {USER}@{IP}:{PORT} on {MOUNTPOINT}\"",
-               "mount":    "mkdir -p {MOUNTPOINT} && sshfs -C -p {PORT} {USER}@{IP}:{RPATH} {MOUNTPOINT}",
-               "unmount":  "fusermount -u {MOUNTPOINT}; rmdir {MOUNTPOINT}",
-               "sftp":     "sftp -P{PORT} {USER}@{IP}:{RPATH}",
-               "ssh":      "ssh -p {PORT} {USER}@{IP}"
-               }[action]
-
-        cmd = cmd.replace("{PORT}", self.details[self.PORT])   \
+        cmd = COMMANDS[action] \
+                 .replace("{PORT}", self.details[self.PORT])   \
                  .replace("{USER}", self.details[self.USER])   \
                  .replace("{IP}", self.details[self.IP])       \
                  .replace("{RPATH}", self.details[self.RPATH]) \
-                 .replace("{NAME}", self.details[self.NAME]) \
+                 .replace("{NAME}", self.name) \
                  .replace("{MOUNTPOINT}", os.path.expanduser(self.details[self.LPATH]))
 
         os.system(cmd)
@@ -40,7 +40,7 @@ class SServer(object):
 
 def run(command_name, server_names):
     CONFIG = ConfigObj(os.path.expanduser('~/.remotes_config'))
-    servers = [SServer(cname, CONFIG[cname])
+    servers = [Endpoint(cname, CONFIG[cname])
                 for cname in CONFIG
                 if cname in server_names or command_name == "list"]
     servers.sort(key=lambda s: s.name)
