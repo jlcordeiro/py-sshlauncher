@@ -10,6 +10,7 @@ COMMANDS = {"list":     ("echo \"{NAME} {USER}@{IP}:{PORT} on {MOUNTPOINT}\"", "
             "mount":    ("mkdir -p {MOUNTPOINT} && sshfs -C -p {PORT} {USER}@{IP}:{RPATH} {MOUNTPOINT}",),
             "unmount":  ("fusermount -u {MOUNTPOINT}; rmdir {MOUNTPOINT}",),
             "sftp":     ("sftp -P{PORT} {USER}@{IP}:{RPATH}",),
+            "yafc":     ("yafc sftp://{USER}@{IP}:{PORT}/{RPATH}",),
             "ssh":      ("ssh -p {PORT} {USER}@{IP}",)
            }
 
