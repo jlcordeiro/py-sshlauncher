@@ -53,8 +53,10 @@ def command_applies_to_all(command_name):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("usage: {} {list,mount,unmount,ssh,sftp} [ep1, ep2, ...]", sys.argv[0])
+    available_commands = COMMANDS.keys()
+    if len(sys.argv) < 2 or sys.argv[1] not in available_commands:
+        print("usage: {} {{{}}} (ep1, ep2, ...)".format(sys.argv[0],
+                                                ",".join(available_commands)))
         sys.exit(1)
 
     (command_name, endpoints) = (sys.argv[1], sys.argv[2:])
